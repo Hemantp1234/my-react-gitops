@@ -5,14 +5,37 @@ on:
     paths:
       - 'frontend/**'
       - 'Dockerfile'
-
-permissions:
-  contents: write
-  packages: write
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'frontend/**'
+      - 'Dockerfile'
+      - '.github/workflows/ci.yml'
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      IMAGE_ID: ghcr.io/hemantp1234/my-react-gitops
+      VERSION: ${{ github.sha }}
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build Docker Image
+      run: docker build -t "$IMAGE_ID:$VERSION" .
+
+  publish-and-update-manifest:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      IMAGE_ID: ghcr.io/hemantp1234/my-react-gitops
+      VERSION: ${{ github.sha }}
     steps:
     - uses: actions/checkout@v3
 
@@ -25,19 +48,14 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        IMAGE_ID=ghcr.io/hemantp1234/my-react-gitops
-        VERSION=${{ github.sha }}
-        
-        docker build -t $IMAGE_ID:$VERSION .
-        docker push $IMAGE_ID:$VERSION
-        
-        # Update the K8s deployment file using sed
-        sed -i "s|image: .*|image: $IMAGE_ID:$VERSION|g" k8s/deployment.yaml
+        docker build -t "$IMAGE_ID:$VERSION" .
+        docker push "$IMAGE_ID:$VERSION"
+        sed -i "s|image: .*|image: $IMAGE_ID:$VERSION|g" k8s/deployment.yml
         
     - name: Commit and Push YAML change
       run: |
         git config --global user.name "GitHub Action Bot"
         git config --global user.email "action@github.com"
-        git add k8s/deployment.yaml
+        git add k8s/deployment.yml
         git commit -m "Update image tag to $VERSION [skip ci]"
         git push
