@@ -5,6 +5,7 @@ on:
     paths:
       - 'frontend/**'
       - 'Dockerfile'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [ master ]
     paths:
