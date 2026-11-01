@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: react-web
-        image: ghcr.io/hemantp1234/my-react-gitops:99cff6b108589b1f8fce180216c69bc647d989a0
+        image: ghcr.io/hemantp1234/my-react-gitops:0903ef9d4e77904367f2977bc92391767c954072
         ports:
         - containerPort: 80
 ---
